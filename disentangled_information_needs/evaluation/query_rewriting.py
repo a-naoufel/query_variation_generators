@@ -133,10 +133,14 @@ def main():
                 knrm.fit(va_run=validation_run, va_qrels=dataset.get_qrels(),tr_pairs=pair_iter(train_ds))
             else:
                 retrieval_model = pt.BatchRetrieve(index, wmodel="BM25") % args.cutoff_threshold >> pt.text.get_text(train_ds, 'text') >> knrm
+                train_topics = train_ds.get_topics()
+                train_topics["query"] = train_topics["query"].str.replace(r"[^\w\s]", " ", regex=True).str.strip()
+                val_topics = dataset.get_topics()
+                val_topics["query"] = val_topics["query"].str.replace(r"[^\w\s]", " ", regex=True).str.strip()
                 retrieval_model.fit(
-                    train_ds.get_topics(),
+                    train_topics,
                     train_ds.get_qrels(),
-                    dataset.get_topics(),
+                    val_topics,
                     dataset.get_qrels())
             knrm.to_checkpoint(model_path)
         logging.info("Loading trained KNRM.")
